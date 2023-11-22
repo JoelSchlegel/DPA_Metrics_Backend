@@ -1,0 +1,41 @@
+﻿@page
+@model ElasticFrontend.Pages.SemesterModel
+@{
+    ViewData["Title"] = "Semester erstellen";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Message"] != null)
+{
+    <script type="text/javascript">
+        window.onload = function () {
+            alert("@TempData["Message"]");
+        };
+    </script>
+}
+
+<form method="post">
+
+    <div>
+        <label for="CreatedBy">Created By:</label>
+        <input type="text" id="CreatedBy" placeholder="Creator" name="CreatedBy" asp-for="CreatedBy" />
+    </div>
+
+    <div>
+        <label for="UploadDate">UploadDate:</label>
+        <input type="date" id="Upload" value="UploadDate.ToString("yyyy-MM-dd")" name="UploadDate" asp-for="UploadDate" />
+    </div>
+
+    <div>
+        <label for="IsActive">Aktiv:</label>
+        <input type="checkbox" id="IsActive" name="IsActive" asp-for="IsActive" />
+    </div>
+
+    <div>
+        <label for="IsExpired">Expired:</label>
+        <input type="checkbox" id="IsExpired" name="IsExpired" asp-for="IsExpired" />
+    </div>
+
+    <button type="submit">Semester erstellen</button>
+</form>
