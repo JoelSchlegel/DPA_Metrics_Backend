@@ -8,54 +8,39 @@ namespace ElasticFrontend.Metric
 {
     public class MetricsRegistry
     {
+        public static CounterOptions TestCounter => new CounterOptions()
+        {
+            Context = "Test_Counter1",
+            Name = "Frontend",
+            MeasurementUnit = Unit.Calls,
+        };
+
         public static CounterOptions RegisterCounter => new CounterOptions()
         {
-            Context = "Frontend",
-            Name = "Register_Successful",
+            Context = "Register_Successful",
+            Name = "Frontend",
             MeasurementUnit = Unit.Calls,
         };
 
         public static CounterOptions LoginSuccessful => new CounterOptions()
         {
-            Context = "Frontend",
-            Name = "Login_Successful",
+            Context = "Login_Successful",
+            Name = "Frontend",
             MeasurementUnit = Unit.Calls
         };
 
-        public static CounterOptions LoginUnsuccessful => new CounterOptions()
+        public static MeterOptions LoginMeter => new MeterOptions()
         {
-            Context = "Frontend",
-            Name = "Login_Unsuccessful",
-            MeasurementUnit = Unit.Calls
-        };
-
-        public static CounterOptions LogoutSuccessful => new CounterOptions()
-        {
-            Context = "Frontend",
-            Name = "Logout_Successful",
-            MeasurementUnit = Unit.Calls
-        };
-
-        public static CounterOptions LogoutUnsuccessful => new CounterOptions()
-        {
-            Context = "Frontend",
-            Name = "Logout_Unsuccessful",
-            MeasurementUnit = Unit.Calls
-        };
-
-        public static MeterOptions LoginApiSuccessful => new MeterOptions()
-        {
-            Context = "Frontend",
-            Name = "Api_Login",
+            Context = "Login_Meter",
+            Name = "Frontend",
             MeasurementUnit = Unit.Calls,
-            RateUnit = TimeUnit.Milliseconds,
-            ResetOnReporting = true,
+            RateUnit = TimeUnit.Hours,
         };
 
         public static TimerOptions DBTimer => new TimerOptions()
         {
-            Context = "Frontend",
-            Name = "DB_Timer",
+            Context = "DB_Timer",
+            Name = "Frontend",
             MeasurementUnit = Unit.Requests,
             DurationUnit = TimeUnit.Milliseconds,
             RateUnit = TimeUnit.Minutes
@@ -65,6 +50,13 @@ namespace ElasticFrontend.Metric
         {
             Name = "Frontend",
             Context = "Registred_User",
+            MeasurementUnit = Unit.Calls
+        };
+
+        public static GaugeOptions InactiveUsers => new GaugeOptions()
+        {
+            Name = "Frontend",
+            Context = "Inactive_Users",
             MeasurementUnit = Unit.Calls
         };
 
@@ -82,12 +74,13 @@ namespace ElasticFrontend.Metric
             MeasurementUnit = Unit.Calls,
         };
 
-        public static CounterOptions CreateSemesterUnsuccessful => new CounterOptions()
+        public static CounterOptions DeleteSemester => new CounterOptions()
         {
             Name = "Frontend",
-            Context = "Create_Semester_Unsuccessful",
+            Context = "Delete_Semester",
             MeasurementUnit = Unit.Calls,
         };
+
         public static GaugeOptions ActiveSemesters => new GaugeOptions()
         {
             Name = "Frontend",

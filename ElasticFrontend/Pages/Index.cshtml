@@ -4,11 +4,32 @@
     ViewData["Title"] = "Home page";
 }
 
+<style>
+    .div-a {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items:center;
+        margin-top: 5px;
+        
+    }
+</style>
+
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <p><a href="http://localhost:5000/metrics-text">Show Metrics Output</a></p>
 </div>
 
-<button>
-    <a class="nav-link text-dark" id="semester" asp-area="" asp-page="/_Semester">Semester</a>
-</button>
+
+
+<div class="div-a">
+
+    <button>  <a class="nav-link text-dark" id="semester" asp-area="" asp-page="/_Semester">Semester</a>  </button>
+
+    <a asp-area="" asp-page="/_SimulateHttpDuration">Request slow Http</a>
+
+    <a asp-area="" asp-page="/_SimulateUnhandledException">Throw unhandled Exception</a>
+
+    <a asp-area="" asp-page="/_ExternalInterface">Get Weather St. Gallen</a>
+
+</div>

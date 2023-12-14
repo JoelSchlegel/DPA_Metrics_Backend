@@ -1,22 +1,23 @@
-using App.Metrics.AspNetCore;
+using App.Metrics;
+using App.Metrics.Formatters.Json;
 using App.Metrics.Formatters.Prometheus;
-using Elastic.Apm.DiagnosticSource;
-using Elastic.Apm.EntityFrameworkCore;
 using Elastic.Apm.NetCoreAll;
 using ElasticFrontend;
 using ElasticFrontend.Areas.Identity.Data;
 using ElasticFrontend.Metric;
 using Microsoft.EntityFrameworkCore;
-using Prometheus;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
 using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
+
 var connectionString = builder.Configuration.GetConnectionString("DataConnection") ?? throw new InvalidOperationException("Connection string 'DataConnection' not found.");
 
 builder.Services.AddDbContext<IdentityContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.AddHttpClient();
 
 builder.Services.AddDefaultIdentity<SampleUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<IdentityContext>();
@@ -29,9 +30,49 @@ builder.WebHost.ConfigureKestrel(serverOpions =>
 });
 
 
+builder.WebHost.UseKestrel(options =>
+{
+    options.AllowSynchronousIO = true;
+});
+
+
+/////////////////////////////////////////////////////////////////////
+///
+//builder.Services.AddMetrics(AppMetrics.CreateDefaultBuilder()
+//    .Configuration.Configure(options =>
+//    {
+//        options.ReportingEnabled = true;
+//    }).Report.OverHttp(options =>
+//    {
+//        options.HttpSettings.RequestUri = new Uri("https://eorhdxjj7h81z3f.m.pipedream.net");
+//        options.HttpSettings.AllowInsecureSsl = true;
+//        options.HttpSettings.RequestUri = new Uri("https://localhost:9200/json-test/_doc");
+//        options.HttpSettings.UserName = "elastic";
+//        options.HttpSettings.Password = "hwgQ3S2_miEdmOpJE6**";
+//        options.HttpPolicy.BackoffPeriod = TimeSpan.FromSeconds(30);
+//        options.HttpPolicy.FailuresBeforeBackoff = 5;
+//        options.HttpPolicy.Timeout = TimeSpan.FromSeconds(10);
+//        options.MetricsOutputFormatter = new MetricsJsonOutputFormatter();
+//        //options.Filter = filter;
+//        options.FlushInterval = TimeSpan.FromSeconds(30);
+//    })
+//.Build());
+
+builder.Services.AddMetrics(AppMetrics.CreateDefaultBuilder().Build());
+
+builder.Services.AddMetricsEndpoints(options =>
+{
+    options.MetricsTextEndpointOutputFormatter = new MetricsPrometheusTextOutputFormatter();
+    options.MetricsEndpointOutputFormatter = new MetricsJsonOutputFormatter();
+    options.EnvironmentInfoEndpointEnabled = true;
+});
+
+////////////////////////////////////////////////////////////////////
+
 X509Certificate2 caCertificate = new X509Certificate2("C:\\Projects\\DiplomArbeit\\Playground_AspNetElastic\\Elasticsearch_Kibana-Local\\elasticsearch-8.10.2_nodel1\\config\\certs\\http_ca.crt");
 X509Chain chain = new X509Chain();
 chain.ChainPolicy.ExtraStore.Add(caCertificate);
+
 
 builder.Host
     .UseSerilog((context, configuration) =>
@@ -51,26 +92,20 @@ builder.Host
             })
            .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName);
     })
-    .UseMetricsWebTracking()
-    .UseMetrics(options =>
-    {
-        options.EndpointOptions = endpointOptions =>
-        {
-            endpointOptions.MetricsTextEndpointOutputFormatter = new MetricsPrometheusTextOutputFormatter();
-            endpointOptions.MetricsEndpointOutputFormatter = new MetricsPrometheusProtobufOutputFormatter();
-            endpointOptions.EnvironmentInfoEndpointEnabled = true;
-        };
-    });
+    .UseMetricsWebTracking();
+
 builder.Services.AddSingleton<Indexer>();
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddRazorPages();
+builder.Services.AddMetricsReportingHostedService();
 
 var app = builder.Build();
 
+//Metrics-Config
 app.UseMiddleware<MetricMiddleware>();
-app.UseMetricsAllMiddleware();
 app.UseMetricsAllEndpoints();
+//
 
 app.UseAllElasticApm(app.Configuration);
 
@@ -83,15 +118,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseMetricServer();
-
 app.UseHealthChecks("/health");
 
-app.UseAllElasticApm(app.Configuration, new HttpDiagnosticsSubscriber(),
-    new EfCoreDiagnosticsSubscriber());
-
 app.Services.GetRequiredService<Indexer>();
-
 
 app.UseHttpsRedirection();
 

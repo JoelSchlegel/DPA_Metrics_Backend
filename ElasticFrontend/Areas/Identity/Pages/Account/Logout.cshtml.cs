@@ -4,7 +4,6 @@
 
 using App.Metrics;
 using ElasticFrontend.Areas.Identity.Data;
-using ElasticFrontend.Metric;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -31,14 +30,12 @@ namespace ElasticFrontend.Areas.Identity.Pages.Account
             _logger.LogInformation("User logged out.");
             if (returnUrl != null)
             {
-                _metrics.Measure.Counter.Increment(MetricsRegistry.LogoutSuccessful);
                 return LocalRedirect(returnUrl);
             }
             else
             {
                 // This needs to be a redirect so that the browser performs a new
                 // request and the identity for the user gets updated.
-                _metrics.Measure.Counter.Increment(MetricsRegistry.LogoutUnsuccessful);
                 return RedirectToPage();
             }
         }

@@ -6,5 +6,6 @@ namespace ElasticFrontend.Areas.Identity.Data
     {
         public string Firstname { get; set; }
         public string Lastname { get; set; }
+        public DateTime LastLogin { get; set; }
     }
 }
