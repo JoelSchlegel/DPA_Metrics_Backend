@@ -2,6 +2,7 @@
 using App.Metrics.Counter;
 using App.Metrics.Filtering;
 using App.Metrics.Gauge;
+using App.Metrics.Histogram;
 using App.Metrics.Meter;
 using App.Metrics.Timer;
 
@@ -27,33 +28,15 @@ namespace ElasticFrontend.Metric.Extensions
             }
         }
 
-        public static long GetMeterValue(this MeterOptions counterOption, IMetrics metrics)
+        public static double GetGaugeValue(this GaugeOptions gaugeOptions, IMetrics metrics)
         {
-            if (counterOption.Context == null)
+            if (gaugeOptions.Context == null)
                 return 0;
 
             else
             {
                 var filter = new MetricsFilter()
-                    .WhereContext(counterOption.Context);
-
-                var value = metrics.Snapshot
-                    .Get(filter)
-                    .Contexts.FirstOrDefault()?.Meters.FirstOrDefault()?.Value.Count ?? 0;
-
-                return value;
-            }
-        }
-
-        public static double GetGaugeValue(this GaugeOptions counterOption, IMetrics metrics)
-        {
-            if (counterOption.Context == null)
-                return 0;
-
-            else
-            {
-                var filter = new MetricsFilter()
-                    .WhereContext(counterOption.Context);
+                    .WhereContext(gaugeOptions.Context);
 
                 var value = metrics.Snapshot
                     .Get(filter)
@@ -63,19 +46,53 @@ namespace ElasticFrontend.Metric.Extensions
             }
         }
 
-        public static double GetMeterValue(this TimerOptions counterOption, IMetrics metrics)
+        public static MeterValue GetMeterValue(this MeterOptions meterOtions, IMetrics metrics)
         {
-            if (counterOption.Context == null)
-                return 0;
+            if (meterOtions.Context == null)
+                throw new InvalidDataException("Context is null");
 
             else
             {
                 var filter = new MetricsFilter()
-                    .WhereContext(counterOption.Context);
+                    .WhereContext(meterOtions.Context);
 
                 var value = metrics.Snapshot
                     .Get(filter)
-                    .Contexts.FirstOrDefault()?.Timers.FirstOrDefault()?.Value.Histogram.Mean ?? 0;  // Mean ist der durchschnitt 
+                    .Contexts.FirstOrDefault()?.Meters.FirstOrDefault()?.Value ?? throw new InvalidDataException("Meter not found");
+
+                return value;
+            }
+        }
+
+        public static HistogramValue GetTimerValue(this TimerOptions timerOptions, IMetrics metrics)
+        {
+            if (timerOptions.Context == null)
+                throw new InvalidDataException("Context is null");
+
+            else
+            {
+                var filter = new MetricsFilter()
+                    .WhereContext(timerOptions.Context);
+
+                var value = metrics.Snapshot
+                    .Get(filter).Contexts.FirstOrDefault()?.Timers.FirstOrDefault()?.Value.Histogram ?? throw new InvalidDataException("Timer not found");
+
+                return value;
+            }
+        }
+
+        public static HistogramValue GetHistogramValue(this HistogramOptions timerOptions, IMetrics metrics)
+        {
+            if (timerOptions.Context == null)
+                throw new InvalidDataException("Context is null");
+
+            else
+            {
+                var filter = new MetricsFilter()
+                    .WhereContext(timerOptions.Context);
+
+                var value = metrics.Snapshot
+                    .Get(filter).Contexts.FirstOrDefault()?.Histograms.FirstOrDefault()?.Value ?? throw new InvalidDataException("Histogram not found");
 
                 return value;
             }

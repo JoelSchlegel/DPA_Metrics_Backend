@@ -1,6 +1,7 @@
 ﻿using App.Metrics;
 using App.Metrics.Counter;
 using App.Metrics.Gauge;
+using App.Metrics.Histogram;
 using App.Metrics.Meter;
 using App.Metrics.Timer;
 
@@ -8,31 +9,25 @@ namespace ElasticFrontend.Metric
 {
     public class MetricsRegistry
     {
-        public static CounterOptions TestCounter => new CounterOptions()
-        {
-            Context = "Test_Counter1",
-            Name = "Frontend",
-            MeasurementUnit = Unit.Calls,
-        };
-
-        public static CounterOptions RegisterCounter => new CounterOptions()
-        {
-            Context = "Register_Successful",
-            Name = "Frontend",
-            MeasurementUnit = Unit.Calls,
-        };
-
         public static CounterOptions LoginSuccessful => new CounterOptions()
         {
             Context = "Login_Successful",
             Name = "Frontend",
+            MeasurementUnit = Unit.Calls,
+            ResetOnReporting = true,
+        };
+
+        public static GaugeOptions RegistredUser => new GaugeOptions()
+        {
+            Name = "Frontend",
+            Context = "Registred_User",
             MeasurementUnit = Unit.Calls
         };
 
         public static MeterOptions LoginMeter => new MeterOptions()
         {
-            Context = "Login_Meter",
             Name = "Frontend",
+            Context = "Login_Meter",
             MeasurementUnit = Unit.Calls,
             RateUnit = TimeUnit.Hours,
         };
@@ -46,11 +41,26 @@ namespace ElasticFrontend.Metric
             RateUnit = TimeUnit.Minutes
         };
 
-        public static GaugeOptions RegistredUser => new GaugeOptions()
+        public static HistogramOptions PostAndPutRequestSize => new HistogramOptions()
         {
+            Context = "Web_Request_Post_Put_Size",
             Name = "Frontend",
-            Context = "Registred_User",
-            MeasurementUnit = Unit.Calls
+            MeasurementUnit = Unit.Bytes
+        };
+
+        public static CounterOptions TestCounter => new CounterOptions()
+        {
+            Context = "Test_Counter1",
+            Name = "Frontend",
+            MeasurementUnit = Unit.Calls,
+            ResetOnReporting = true,
+        };
+
+        public static CounterOptions RegisterCounter => new CounterOptions()
+        {
+            Context = "Register_Successful",
+            Name = "Frontend",
+            MeasurementUnit = Unit.Calls,
         };
 
         public static GaugeOptions InactiveUsers => new GaugeOptions()

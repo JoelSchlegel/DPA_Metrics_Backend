@@ -127,6 +127,7 @@ namespace ElasticFrontend.Areas.Identity.Pages.Account
 
                     _logger.LogInformation("User logged in {user_Firstname}", user.Firstname);
                     _metrics.Measure.Counter.Increment(MetricsRegistry.LoginSuccessful);
+                    _metrics.Measure.Meter.Mark(MetricsRegistry.LoginMeter);
 
                     // Beispiel wie man Werte vom Endpunkt auslesen kann //
 

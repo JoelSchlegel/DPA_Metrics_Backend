@@ -5,11 +5,11 @@ using App.Metrics.Meter;
 
 namespace ElasticFrontend.Metric
 {
-    public class Indexer
+    public class MetricsIndexer
     {
         private readonly IMetrics _metrics;
 
-        public Indexer(IMetrics metrics)
+        public MetricsIndexer(IMetrics metrics)
         {
             _metrics = metrics;
             ExecuteCounterOptionsIndexer();
@@ -20,6 +20,7 @@ namespace ElasticFrontend.Metric
         #region Counter
         public void ExecuteCounterOptionsIndexer()
         {
+            CounterOptionsIndexer(MetricsRegistry.TestCounter);
             CounterOptionsIndexer(MetricsRegistry.RegisterCounter);
             CounterOptionsIndexer(MetricsRegistry.LoginSuccessful);
             CounterOptionsIndexer(MetricsRegistry.CreateSemesterSuccessful);

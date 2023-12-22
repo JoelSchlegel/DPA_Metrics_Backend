@@ -1,5 +1,5 @@
 using App.Metrics;
-using App.Metrics.Formatters.Json;
+using App.Metrics.Formatters.Ascii;
 using App.Metrics.Formatters.Prometheus;
 using Elastic.Apm.NetCoreAll;
 using ElasticFrontend;
@@ -8,7 +8,6 @@ using ElasticFrontend.Metric;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
-using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,76 +28,82 @@ builder.WebHost.ConfigureKestrel(serverOpions =>
     serverOpions.ListenAnyIP(5000);
 });
 
-
 builder.WebHost.UseKestrel(options =>
 {
     options.AllowSynchronousIO = true;
 });
 
+//builder.WebHost.ConfigureMetricsWithDefaults(options =>
+//{
+//    options.Report.ToTextFile(options =>
+//    {
+//        options.MetricsOutputFormatter = new MetricsJsonOutputFormatter();
+//        options.OutputPathAndFileName = @"C:\temp\metrics\frontend_metrics.json";
+//        options.FlushInterval = TimeSpan.FromSeconds(5);
+
+//    });
+//});
+//builder.Services.AddMetricsReportingHostedService();
 
 /////////////////////////////////////////////////////////////////////
 ///
-//builder.Services.AddMetrics(AppMetrics.CreateDefaultBuilder()
+//var filter = new MetricsFilter().WhereType(App.Metrics.MetricType.Timer);
+//builder.Services.AddMetrics(new MetricsBuilder()
 //    .Configuration.Configure(options =>
 //    {
 //        options.ReportingEnabled = true;
 //    }).Report.OverHttp(options =>
 //    {
-//        options.HttpSettings.RequestUri = new Uri("https://eorhdxjj7h81z3f.m.pipedream.net");
 //        options.HttpSettings.AllowInsecureSsl = true;
-//        options.HttpSettings.RequestUri = new Uri("https://localhost:9200/json-test/_doc");
-//        options.HttpSettings.UserName = "elastic";
-//        options.HttpSettings.Password = "hwgQ3S2_miEdmOpJE6**";
+//        options.HttpSettings.RequestUri = new Uri("http://localhost:5000/metrics");
+//        //options.HttpSettings.UserName = "elastic";
+//        //options.HttpSettings.Password = "hwgQ3S2_miEdmOpJE6**";
 //        options.HttpPolicy.BackoffPeriod = TimeSpan.FromSeconds(30);
 //        options.HttpPolicy.FailuresBeforeBackoff = 5;
 //        options.HttpPolicy.Timeout = TimeSpan.FromSeconds(10);
-//        options.MetricsOutputFormatter = new MetricsJsonOutputFormatter();
-//        //options.Filter = filter;
+//        options.MetricsOutputFormatter = new MetricsPrometheusTextOutputFormatter();
+//        options.Filter = filter;
 //        options.FlushInterval = TimeSpan.FromSeconds(30);
 //    })
 //.Build());
+
 
 builder.Services.AddMetrics(AppMetrics.CreateDefaultBuilder().Build());
 
 builder.Services.AddMetricsEndpoints(options =>
 {
     options.MetricsTextEndpointOutputFormatter = new MetricsPrometheusTextOutputFormatter();
-    options.MetricsEndpointOutputFormatter = new MetricsJsonOutputFormatter();
+    options.MetricsEndpointOutputFormatter = new MetricsTextOutputFormatter();
     options.EnvironmentInfoEndpointEnabled = true;
 });
 
 ////////////////////////////////////////////////////////////////////
 
-X509Certificate2 caCertificate = new X509Certificate2("C:\\Projects\\DiplomArbeit\\Playground_AspNetElastic\\Elasticsearch_Kibana-Local\\elasticsearch-8.10.2_nodel1\\config\\certs\\http_ca.crt");
-X509Chain chain = new X509Chain();
-chain.ChainPolicy.ExtraStore.Add(caCertificate);
-
-
 builder.Host
-    .UseSerilog((context, configuration) =>
-    {
-        configuration.ReadFrom.Configuration(context.Configuration)
-        .Enrich.WithMachineName()
-        .WriteTo.Console()
-        .WriteTo.Elasticsearch(
-            new ElasticsearchSinkOptions(new Uri(context.Configuration["ElasticConfiguration:Uri"]))
-            {
-                ModifyConnectionSettings = x => x.ServerCertificateValidationCallback((sender, certificate, chain, sslPolicyErrors) => true)
-                .BasicAuthentication("elastic", "hwgQ3S2_miEdmOpJE6**"),
-                IndexFormat = $"{context.Configuration["ApplicationName"]}-logs-{context.HostingEnvironment.EnvironmentName?.ToLower().Replace(".", "-")}-{DateTime.Now:dd-MM-yyyy}",
-                AutoRegisterTemplate = true,
-                NumberOfShards = 2,
-                NumberOfReplicas = 1,
-            })
-           .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName);
-    })
-    .UseMetricsWebTracking();
+.UseSerilog((context, configuration) =>
+{
+    var uri = new Uri(context.Configuration["ElasticConfiguration:Uri"]);
 
-builder.Services.AddSingleton<Indexer>();
+    configuration.ReadFrom.Configuration(context.Configuration)
+    .Enrich.WithMachineName()
+    .WriteTo.Console()
+    .WriteTo.Elasticsearch(
+        new ElasticsearchSinkOptions(uri)
+        {
+            ModifyConnectionSettings = x => x.ServerCertificateValidationCallback((sender, certificate, chain, sslPolicyErrors) => true)
+            .BasicAuthentication("elastic", "hwgQ3S2_miEdmOpJE6**"),
+            IndexFormat = $"{context.Configuration["ApplicationLoggerName"]}-logs-{context.HostingEnvironment.EnvironmentName?.ToLower().Replace(".", "-")}-{DateTime.Now:dd-MM-yyyy}",
+            AutoRegisterTemplate = true,
+            NumberOfShards = 2,
+            NumberOfReplicas = 1,
+        })
+       .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName);
+}).UseMetricsWebTracking();
+
+builder.Services.AddSingleton<MetricsIndexer>();
 
 // Add services to the container
 builder.Services.AddRazorPages();
-builder.Services.AddMetricsReportingHostedService();
 
 var app = builder.Build();
 
@@ -120,7 +125,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHealthChecks("/health");
 
-app.Services.GetRequiredService<Indexer>();
+app.Services.GetRequiredService<MetricsIndexer>();
 
 app.UseHttpsRedirection();
 

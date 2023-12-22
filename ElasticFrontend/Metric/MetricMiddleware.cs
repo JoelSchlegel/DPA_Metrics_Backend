@@ -23,11 +23,20 @@ namespace ElasticFrontend.Metric
 
         public async Task InvokeAsync(HttpContext context)
         {
-
             var contextpath = context.Request.Path;
             var userAgent = context.Request.Headers["User-Agent"].ToString();
 
-            if (context.Request.Path.StartsWithSegments(new PathString("/metrics-text"))) //metrics-text
+            var httpMethod = context.Request.Method.ToUpperInvariant();
+
+            if (httpMethod == "POST" || httpMethod == "PUT")
+            {
+                if (context.Request.Headers != null && context.Request.Headers.ContainsKey("Content-Length"))
+                {
+                    _metrics.Measure.Histogram.Update(MetricsRegistry.PostAndPutRequestSize, long.Parse(context.Request.Headers["Content-Length"].First()));
+                }
+            }
+
+            if (context.Request.Path.StartsWithSegments(new PathString("/metrics-text")))
             {
                 try
                 {
@@ -51,9 +60,6 @@ namespace ElasticFrontend.Metric
                         _metrics.Measure.Gauge.SetValue(MetricsRegistry.ExpiredSemesters, allExpiredSemester.Count);
 
                         _logger.LogInformation("Registred Users in DB: {usersInDB.Count}", usersInDB.Count);
-
-
-                        //metricsResetter.ResetMetrics();
                     }
                 }
                 catch
