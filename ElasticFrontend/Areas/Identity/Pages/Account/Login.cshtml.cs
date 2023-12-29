@@ -3,6 +3,7 @@
 #nullable disable
 
 using App.Metrics;
+using App.Metrics.Filtering;
 using ElasticFrontend.Areas.Identity.Data;
 using ElasticFrontend.Metric;
 using Microsoft.AspNetCore.Authentication;
@@ -121,9 +122,21 @@ namespace ElasticFrontend.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     var user = await _userManager.FindByEmailAsync(Input.Email);
+                    user.LastLogin = DateTime.Now;
+                    await _userManager.UpdateAsync(user);
 
                     _logger.LogInformation("User logged in {user_Firstname}", user.Firstname);
                     _metrics.Measure.Counter.Increment(MetricsRegistry.LoginSuccessful);
+                    _metrics.Measure.Meter.Mark(MetricsRegistry.LoginMeter);
+
+                    // Beispiel wie man Werte vom Endpunkt auslesen kann //
+
+                    var filter = new MetricsFilter()
+                        .WhereContext("Login_Successful");
+
+                    var snapshotValue = _metrics.Snapshot.Get(filter).Contexts.FirstOrDefault().Counters.FirstOrDefault().Value.Count;
+                    ///////////////////////////////////////////////////////
+
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
@@ -139,7 +152,6 @@ namespace ElasticFrontend.Areas.Identity.Pages.Account
                 }
                 else
                 {
-                    _metrics.Measure.Counter.Increment(MetricsRegistry.LoginUnsuccessful);
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return Page();
                 }

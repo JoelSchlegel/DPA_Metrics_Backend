@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace ElasticFrontend.Pages
 {
@@ -14,7 +13,6 @@ namespace ElasticFrontend.Pages
 
         public void OnGet()
         {
-
         }
     }
 }

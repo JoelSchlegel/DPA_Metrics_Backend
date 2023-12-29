@@ -13,6 +13,7 @@ namespace ElasticFrontend.Manager
 
         public SemesterManager(ILogger logger, IMetrics metrics, IdentityContext context)
         {
+            _logger = logger;
             _identityContext = context;
             _metrics = metrics;
 
@@ -32,9 +33,9 @@ namespace ElasticFrontend.Manager
 
             return result.ToViewModelExtended();
         }
-        public bool Delete(SemesterViewModelExtended semester)
+        public bool Delete(int id)
         {
-            var entity = _identityContext.Semester.Find(semester.ToEntityExtended());
+            var entity = _identityContext.Semester.Where(x => x.Id == id).FirstOrDefault();
 
             if (entity != null)
             {
@@ -46,6 +47,16 @@ namespace ElasticFrontend.Manager
             {
                 return false;
             }
+        }
+
+        public List<SemesterViewModelExtended> GetAll()
+        {
+            var result = _identityContext.Semester.ToList();
+            var semesterViewModels = new List<SemesterViewModelExtended>();
+
+            semesterViewModels = result.Select(x => x.ToViewModelExtended()).ToList();
+
+            return semesterViewModels;
         }
 
         public List<SemesterViewModelExtended> Get(Semester semester)

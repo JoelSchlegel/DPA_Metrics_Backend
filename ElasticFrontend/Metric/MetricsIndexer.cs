@@ -5,11 +5,11 @@ using App.Metrics.Meter;
 
 namespace ElasticFrontend.Metric
 {
-    public class Indexer
+    public class MetricsIndexer
     {
         private readonly IMetrics _metrics;
 
-        public Indexer(IMetrics metrics)
+        public MetricsIndexer(IMetrics metrics)
         {
             _metrics = metrics;
             ExecuteCounterOptionsIndexer();
@@ -17,21 +17,23 @@ namespace ElasticFrontend.Metric
             ExecuteGaugeOptionsIndexer();
         }
 
+        #region Counter
         public void ExecuteCounterOptionsIndexer()
         {
+            CounterOptionsIndexer(MetricsRegistry.TestCounter);
             CounterOptionsIndexer(MetricsRegistry.RegisterCounter);
-            CounterOptionsIndexer(MetricsRegistry.LoginUnsuccessful);
             CounterOptionsIndexer(MetricsRegistry.LoginSuccessful);
-            CounterOptionsIndexer(MetricsRegistry.LogoutSuccessful);
             CounterOptionsIndexer(MetricsRegistry.CreateSemesterSuccessful);
-            CounterOptionsIndexer(MetricsRegistry.CreateSemesterUnsuccessful);
+            CounterOptionsIndexer(MetricsRegistry.DeleteSemester);
         }
         public void CounterOptionsIndexer(CounterOptions counterOptions)
         {
             _metrics.Measure.Counter.Increment(counterOptions);
             _metrics.Measure.Counter.Decrement(counterOptions);
         }
+        #endregion
 
+        #region Gauge
         public void ExecuteGaugeOptionsIndexer()
         {
             GaugeOptionsIndexer(MetricsRegistry.RegistredUser);
@@ -44,15 +46,18 @@ namespace ElasticFrontend.Metric
         {
             _metrics.Measure.Gauge.SetValue(gaugeOptions, 0);
         }
+        #endregion
 
+        #region Meter
         public void ExecuteMeterOptionsIndexer()
         {
-            MeterOptionsIndexer(MetricsRegistry.LoginApiSuccessful);
+            MeterOptionsIndexer(MetricsRegistry.LoginMeter);
         }
 
         public void MeterOptionsIndexer(MeterOptions meterOptions)
         {
             _metrics.Measure.Meter.Mark(meterOptions, 0);
         }
+        #endregion
     }
 }

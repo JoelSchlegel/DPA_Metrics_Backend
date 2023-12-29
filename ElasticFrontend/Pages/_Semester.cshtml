@@ -1,5 +1,33 @@
 ﻿@page
-@model ElasticFrontend.Pages.SemesterModel
+@model ElasticFrontend.Pages._SemesterModel
+
+<style>
+    table {
+        width: 100%;
+        top: 3px;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    tr:hover {
+        background-color: #f1f1f1;
+    }
+</style>
+
+
 @{
     ViewData["Title"] = "Semester erstellen";
 }
@@ -15,7 +43,8 @@
     </script>
 }
 
-<form method="post">
+<form method="post" asp-page-handler="CreateSemester"> 
+
 
     <div>
         <label for="CreatedBy">Created By:</label>
@@ -37,5 +66,37 @@
         <input type="checkbox" id="IsExpired" name="IsExpired" asp-for="IsExpired" />
     </div>
 
-    <button type="submit">Semester erstellen</button>
-</form>
+        <button type="submit">Semester Erstellen</button>
+
+ </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Created By</th>
+                <th>Upload Date</th>
+                <th>Is Active</th>
+                <th>Is Expired</th>
+                <th>Delete</th
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var semester in Model.Semesters)
+            {
+                <tr>
+                    <td>@semester.Id</td>
+                    <td>@semester.CreatedBy</td>
+                    <td>@semester.UploadDate.ToString("yyyy-MM-dd")</td>
+                    <td>@(semester.IsActive ? "Yes" : "No")</td>
+                    <td>@(semester.IsExpired ? "Yes" : "No")</td>
+                    <td>
+                     <form method="post" asp-page-handler="DeleteSemester" asp-route-id="@semester.Id">
+                        <button type="submit">Löschen</button>
+                    </form>
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>

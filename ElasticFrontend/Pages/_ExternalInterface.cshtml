@@ -1,0 +1,30 @@
+﻿@page
+@model ElasticFrontend.Pages._ExternalInterfaceModel
+<h1>Open Weather Api</h1>
+
+@if (Model._weatherData.Count > 0)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Stadt</th>
+                <th>Temperatur</th>
+                <th>Humidity</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model._weatherData)
+            {
+                <tr>
+                    <td>@item.City</td>
+                    <td>@item.Temperature °C</td>
+                    <td>@item.Humidity</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Keine Daten vorhanden.</p>
+}
