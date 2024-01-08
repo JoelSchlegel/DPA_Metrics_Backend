@@ -1,5 +1,5 @@
 using App.Metrics;
-using App.Metrics.Formatters.Ascii;
+using App.Metrics.Formatters.Json;
 using App.Metrics.Formatters.Prometheus;
 using Elastic.Apm.NetCoreAll;
 using ElasticFrontend;
@@ -7,7 +7,6 @@ using ElasticFrontend.Areas.Identity.Data;
 using ElasticFrontend.Metric;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Serilog.Sinks.Elasticsearch;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,52 +32,57 @@ builder.WebHost.UseKestrel(options =>
     options.AllowSynchronousIO = true;
 });
 
-//builder.WebHost.ConfigureMetricsWithDefaults(options =>
-//{
-//    options.Report.ToTextFile(options =>
-//    {
-//        options.MetricsOutputFormatter = new MetricsJsonOutputFormatter();
-//        options.OutputPathAndFileName = @"C:\temp\metrics\frontend_metrics.json";
-//        options.FlushInterval = TimeSpan.FromSeconds(5);
-
-//    });
-//});
-//builder.Services.AddMetricsReportingHostedService();
-
-/////////////////////////////////////////////////////////////////////
-///
-//var filter = new MetricsFilter().WhereType(App.Metrics.MetricType.Timer);
-//builder.Services.AddMetrics(new MetricsBuilder()
-//    .Configuration.Configure(options =>
-//    {
-//        options.ReportingEnabled = true;
-//    }).Report.OverHttp(options =>
-//    {
-//        options.HttpSettings.AllowInsecureSsl = true;
-//        options.HttpSettings.RequestUri = new Uri("http://localhost:5000/metrics");
-//        //options.HttpSettings.UserName = "elastic";
-//        //options.HttpSettings.Password = "hwgQ3S2_miEdmOpJE6**";
-//        options.HttpPolicy.BackoffPeriod = TimeSpan.FromSeconds(30);
-//        options.HttpPolicy.FailuresBeforeBackoff = 5;
-//        options.HttpPolicy.Timeout = TimeSpan.FromSeconds(10);
-//        options.MetricsOutputFormatter = new MetricsPrometheusTextOutputFormatter();
-//        options.Filter = filter;
-//        options.FlushInterval = TimeSpan.FromSeconds(30);
-//    })
-//.Build());
-
-
+// Default Builder von AppMetrics + Endpoint Format
 builder.Services.AddMetrics(AppMetrics.CreateDefaultBuilder().Build());
 
 builder.Services.AddMetricsEndpoints(options =>
 {
-    options.MetricsTextEndpointOutputFormatter = new MetricsPrometheusTextOutputFormatter();
-    options.MetricsEndpointOutputFormatter = new MetricsTextOutputFormatter();
-    options.EnvironmentInfoEndpointEnabled = true;
+    options.MetricsTextEndpointOutputFormatter = new MetricsPrometheusTextOutputFormatter(); // /metrics-text
+    options.MetricsEndpointOutputFormatter = new MetricsJsonOutputFormatter(); // /metrics
+    options.EnvironmentInfoEndpointEnabled = true; // /env
 });
 
-////////////////////////////////////////////////////////////////////
+// Beispiel mit File Reporter
+/*     
+builder.WebHost.ConfigureMetricsWithDefaults(options =>
+{
+    options.Report.ToTextFile(options =>
+    {
+        options.MetricsOutputFormatter = new MetricsJsonOutputFormatter();
+        options.OutputPathAndFileName = @"C:\temp\metrics\frontend_metrics.json";
+        options.FlushInterval = TimeSpan.FromSeconds(5);
 
+    });
+});
+builder.Services.AddMetricsReportingHostedService();
+*/
+
+
+// Beispiel mit HTTP-Reporter direkt nach Elasticsearch
+/*
+var filter = new MetricsFilter().WhereType(App.Metrics.MetricType.Timer);
+builder.Services.AddMetrics(new MetricsBuilder()
+    .Configuration.Configure(options =>
+    {
+        options.ReportingEnabled = true;
+    }).Report.OverHttp(options =>
+    {
+        options.HttpSettings.AllowInsecureSsl = true;
+        options.HttpSettings.RequestUri = new Uri("http://localhost:5000/metrics");
+        //options.HttpSettings.UserName = "elastic";
+        //options.HttpSettings.Password = "hwgQ3S2_miEdmOpJE6**";
+        options.HttpPolicy.BackoffPeriod = TimeSpan.FromSeconds(30);
+        options.HttpPolicy.FailuresBeforeBackoff = 5;
+        options.HttpPolicy.Timeout = TimeSpan.FromSeconds(10);
+        options.MetricsOutputFormatter = new MetricsPrometheusTextOutputFormatter();
+        options.Filter = filter;
+        options.FlushInterval = TimeSpan.FromSeconds(30);
+    })
+.Build());
+*/
+
+// Beispiel Reporting to Elasticsearch 
+/*
 builder.Host
 .UseSerilog((context, configuration) =>
 {
@@ -99,7 +103,7 @@ builder.Host
         })
        .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName);
 }).UseMetricsWebTracking();
-
+*/
 builder.Services.AddSingleton<MetricsIndexer>();
 
 // Add services to the container
@@ -111,6 +115,8 @@ var app = builder.Build();
 app.UseMiddleware<MetricMiddleware>();
 app.UseMetricsAllEndpoints();
 //
+
+
 
 app.UseAllElasticApm(app.Configuration);
 
