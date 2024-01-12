@@ -7,6 +7,7 @@ using ElasticFrontend.Areas.Identity.Data;
 using ElasticFrontend.Metric;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Serilog.Sinks.Elasticsearch;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,8 +82,8 @@ builder.Services.AddMetrics(new MetricsBuilder()
 .Build());
 */
 
-// Beispiel Reporting to Elasticsearch 
-/*
+
+
 builder.Host
 .UseSerilog((context, configuration) =>
 {
@@ -103,7 +104,7 @@ builder.Host
         })
        .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName);
 }).UseMetricsWebTracking();
-*/
+
 builder.Services.AddSingleton<MetricsIndexer>();
 
 // Add services to the container

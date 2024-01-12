@@ -1,7 +1,4 @@
 ﻿using App.Metrics;
-using ElasticFrontend.Areas.Identity.Data;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace ElasticFrontend.Metric
 {
@@ -23,8 +20,6 @@ namespace ElasticFrontend.Metric
 
         public async Task InvokeAsync(HttpContext context)
         {
-            var contextpath = context.Request.Path;
-            var userAgent = context.Request.Headers["User-Agent"].ToString();
 
             var httpMethod = context.Request.Method.ToUpperInvariant();
 
@@ -36,36 +31,20 @@ namespace ElasticFrontend.Metric
                 }
             }
 
+            var contextpath = context.Request.Path;
+            var userAgent = context.Request.Headers["User-Agent"].ToString();
+
             if (context.Request.Path.StartsWithSegments(new PathString("/metrics-text")))
             {
                 try
                 {
-                    using (var scope = _serviceScopeFactory.CreateScope())
-                    {
-                        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<SampleUser>>();
-                        var usersInDB = await userManager.Users.ToListAsync();
-                        _metrics.Measure.Gauge.SetValue(MetricsRegistry.RegistredUser, usersInDB.Count);
-
-                        var inactiveUsers = await userManager.Users.Where(x => x.LastLogin == null || x.LastLogin < DateTime.Now.AddDays(-7)).ToListAsync();
-                        _metrics.Measure.Gauge.SetValue(MetricsRegistry.InactiveUsers, inactiveUsers.Count);
-
-                        var semesterManager = scope.ServiceProvider.GetService<IdentityContext>();
-                        var allSemester = await semesterManager.Semester.ToListAsync();
-                        _metrics.Measure.Gauge.SetValue(MetricsRegistry.RegistredSemester, allSemester.Count);
-
-                        var allActiveSemesters = allSemester.FindAll(s => s.IsActive);
-                        _metrics.Measure.Gauge.SetValue(MetricsRegistry.ActiveSemesters, allActiveSemesters.Count);
-
-                        var allExpiredSemester = allSemester.FindAll(s => s.IsExpired);
-                        _metrics.Measure.Gauge.SetValue(MetricsRegistry.ExpiredSemesters, allExpiredSemester.Count);
-
-                        _logger.LogInformation("Registred Users in DB: {usersInDB.Count}", usersInDB.Count);
-                    }
+                    var metricsUpdater = new MetricsUpdater(_logger, _metrics, _serviceScopeFactory);
+                    metricsUpdater.UpdateMetrics();
                 }
-                catch
+                catch (Exception ex)
                 {
                     string errorText = "Middleware Invoker failed";
-                    _logger.LogError(nameof(InvokeAsync) + "; " + errorText);
+                    _logger.LogError(nameof(InvokeAsync) + "; " + errorText + "; " + ex);
                 }
             }
 
